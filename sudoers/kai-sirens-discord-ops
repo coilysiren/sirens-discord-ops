@@ -1,8 +1,15 @@
 # /etc/sudoers.d/kai-sirens-discord-ops
 #
-# NOPASSWD entry so the auto-update timer (running as kai) can restart the
-# bot when origin/main has moved. Per-verb scoping keeps the blast radius
-# narrow: only systemctl restart on this exact unit.
+# NOPASSWD entries so:
+#   - the auto-update timer (running as kai) can restart the bot when
+#     origin/main has moved.
+#   - `coily ssh systemctl status sirens-discord-ops` works for diagnostic
+#     access without a sudo password prompt.
+#
+# Sudoers strict-matches command-line args, so we list each form coily
+# emits explicitly. coily `status` appends --no-pager; `restart` does not.
+# One rule per line so the comma-list parser doesn't mis-tokenize the
+# `--no-pager` flag.
 #
 # Install on kai-server (one-time, done by scripts/install.sh):
 #   sudo install -m 0440 -o root -g root \
@@ -10,4 +17,9 @@
 #     /etc/sudoers.d/kai-sirens-discord-ops
 #   sudo visudo -cf /etc/sudoers.d/kai-sirens-discord-ops
 
-kai ALL=(root) NOPASSWD: /bin/systemctl restart sirens-discord-ops, /bin/systemctl status sirens-discord-ops, /bin/systemctl status sirens-discord-ops --no-pager
+kai ALL=(root) NOPASSWD: /bin/systemctl restart sirens-discord-ops
+kai ALL=(root) NOPASSWD: /usr/bin/systemctl restart sirens-discord-ops
+kai ALL=(root) NOPASSWD: /bin/systemctl status sirens-discord-ops --no-pager
+kai ALL=(root) NOPASSWD: /usr/bin/systemctl status sirens-discord-ops --no-pager
+kai ALL=(root) NOPASSWD: /bin/systemctl status sirens-discord-ops
+kai ALL=(root) NOPASSWD: /usr/bin/systemctl status sirens-discord-ops
