@@ -1,0 +1,13 @@
+# /etc/sudoers.d/kai-sirens-discord-ops
+#
+# NOPASSWD entry so the auto-update timer (running as kai) can restart the
+# bot when origin/main has moved. Per-verb scoping keeps the blast radius
+# narrow: only systemctl restart on this exact unit.
+#
+# Install on kai-server (one-time, done by scripts/install.sh):
+#   sudo install -m 0440 -o root -g root \
+#     /home/kai/projects/coilysiren/sirens-discord-ops/sudoers/kai-sirens-discord-ops \
+#     /etc/sudoers.d/kai-sirens-discord-ops
+#   sudo visudo -cf /etc/sudoers.d/kai-sirens-discord-ops
+
+kai ALL=(root) NOPASSWD: /bin/systemctl restart sirens-discord-ops

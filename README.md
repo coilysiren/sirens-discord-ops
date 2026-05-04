@@ -63,25 +63,40 @@ in place, so the verb list stays current without duplicate panels.
 ## Production deploy
 
 Native systemd unit on kai-server (not k3s). The bot shells out to `coily`
-directly, so it runs as the same user that scripts/install-coily.sh
-configured (`kai`).
+directly, so it runs as the same user `scripts/install-coily.sh` (in
+coilysiren/infrastructure) configured: `kai`.
 
-git-push / git-pull workflow, mirroring coilysiren/infrastructure:
+The unit's `ExecStart` points directly at `scripts/start.sh` in this repo.
+That script fetches origin/main, rebuilds the binary in place, fetches
+the four SSM-backed env vars at exec time, and execs into the binary. No
+`/etc/sirens-discord-ops.env`, no `/usr/local/bin/sirens-discord-ops`.
+
+A companion `sirens-discord-ops-update.timer` polls origin/main every
+five minutes and restarts the unit only when the remote has moved. So
+the update story is:
 
 ```sh
 # Workstation
 git push
+# Within ~5min, kai-server's timer fires, restart cycles, bot is on new code.
+```
 
+For the impatient: `ssh kai-server sudo systemctl restart sirens-discord-ops`.
+
+### One-time bootstrap
+
+```sh
 # kai-server
-cd ~/projects/coilysiren/sirens-discord-ops
-git pull
+cd /home/kai/projects/coilysiren
+git clone git@github.com:coilysiren/sirens-discord-ops.git
+cd sirens-discord-ops
 bash scripts/install.sh
 ```
 
-The script builds the binary in place (Go via Linuxbrew), installs the
-binary and unit file, renders `/etc/sirens-discord-ops.env` from SSM, and
-restarts the unit. Idempotent: re-run after every pull that touches the
-bot, the unit file, or the SSM-backed env.
+`install.sh` drops the unit files and sudoers fragment into place,
+daemon-reloads, and enables both the service and the auto-update timer.
+Re-run it only when the unit files or sudoers in this repo change. Code
+changes flow through the timer, not through install.
 
 ## Adding a new game
 
