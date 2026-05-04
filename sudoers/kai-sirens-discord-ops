@@ -19,6 +19,10 @@
 
 kai ALL=(root) NOPASSWD: /bin/systemctl restart sirens-discord-ops
 kai ALL=(root) NOPASSWD: /usr/bin/systemctl restart sirens-discord-ops
+kai ALL=(root) NOPASSWD: /bin/systemctl start sirens-discord-ops
+kai ALL=(root) NOPASSWD: /usr/bin/systemctl start sirens-discord-ops
+kai ALL=(root) NOPASSWD: /bin/systemctl stop sirens-discord-ops
+kai ALL=(root) NOPASSWD: /usr/bin/systemctl stop sirens-discord-ops
 kai ALL=(root) NOPASSWD: /bin/systemctl status sirens-discord-ops --no-pager
 kai ALL=(root) NOPASSWD: /usr/bin/systemctl status sirens-discord-ops --no-pager
 kai ALL=(root) NOPASSWD: /bin/systemctl status sirens-discord-ops
