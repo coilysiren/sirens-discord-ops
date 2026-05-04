@@ -170,18 +170,19 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 
 func (b *Bot) runVerb(i *discordgo.InteractionCreate, game Game, verb string) {
 	actor := actorMention(i)
-	startMsg := fmt.Sprintf("[%s] %s started %s", game.Name, actor, verb)
+	args := append(append([]string{}, game.CoilyPrefix...), verb)
+	cmd := "coily " + strings.Join(args, " ")
+	startMsg := fmt.Sprintf("%s started `%s`", actor, cmd)
 	if _, err := b.session.ChannelMessageSend(b.cfg.AuditChannelID, startMsg); err != nil {
 		log.Printf("audit start: %v", err)
 	}
-	args := append(append([]string{}, game.CoilyPrefix...), verb)
 	// Coily verbs are typically fast, but `restart` waits on systemctl. A
 	// 5-minute ceiling is generous and prevents a stuck invocation from
 	// pinning the bot.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	res, err := runCoily(ctx, b.cfg.CoilyBin, args)
-	doneMsg := buildDoneMessage(game.Name, verb, res, err)
+	doneMsg := buildDoneMessage(cmd, res, err)
 	if _, sendErr := b.session.ChannelMessageSend(b.cfg.AuditChannelID, doneMsg); sendErr != nil {
 		log.Printf("audit done: %v", sendErr)
 	}
@@ -200,10 +201,10 @@ func (b *Bot) runVerb(i *discordgo.InteractionCreate, game Game, verb string) {
 // header eats some of that, so we truncate coily output to fit and append
 // a "(truncated)" marker. The full output is in journalctl on kai-server
 // for forensics.
-func buildDoneMessage(game, verb string, res CoilyResult, err error) string {
-	header := fmt.Sprintf("[%s] %s complete (exit %d)", game, verb, res.ExitCode)
+func buildDoneMessage(cmd string, res CoilyResult, err error) string {
+	header := fmt.Sprintf("`%s` complete (exit %d)", cmd, res.ExitCode)
 	if err != nil {
-		header = fmt.Sprintf("[%s] %s failed to start: %v", game, verb, err)
+		header = fmt.Sprintf("`%s` failed to start: %v", cmd, err)
 	}
 	body := res.Output
 	const maxBody = 1800
