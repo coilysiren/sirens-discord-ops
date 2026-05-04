@@ -10,4 +10,4 @@
 #     /etc/sudoers.d/kai-sirens-discord-ops
 #   sudo visudo -cf /etc/sudoers.d/kai-sirens-discord-ops
 
-kai ALL=(root) NOPASSWD: /bin/systemctl restart sirens-discord-ops
+kai ALL=(root) NOPASSWD: /bin/systemctl restart sirens-discord-ops, /bin/systemctl status sirens-discord-ops
