@@ -45,8 +45,8 @@ Optional:
 
 - `COILY_BIN` - path to the coily binary. Defaults to `coily` (PATH lookup).
 
-The `deploy/render-env.sh` script writes `/etc/sirens-discord-ops.env` from
-SSM. Run it on kai-server during deploy.
+The `scripts/install.sh` script writes `/etc/sirens-discord-ops.env` from
+SSM as part of the deploy. See "Production deploy" below.
 
 ## Local development
 
@@ -62,19 +62,30 @@ in place, so the verb list stays current without duplicate panels.
 
 ## Production deploy
 
-Native systemd unit on kai-server (not k3s). The bot needs the same
-environment as a `coily` invocation, since it shells out to coily directly.
+Native systemd unit on kai-server (not k3s). The bot shells out to `coily`
+directly, so it runs as the same user that scripts/install-coily.sh
+configured (`kai`).
+
+git-push / git-pull workflow, mirroring coilysiren/infrastructure:
 
 ```sh
-# From a workstation
-make install                      # cross-compile + scp + restart
-ssh kai-server sudo bash deploy/render-env.sh    # refresh env from SSM
-sudo systemctl enable sirens-discord-ops         # one-time
+# Workstation
+git push
+
+# kai-server
+cd ~/projects/coilysiren/sirens-discord-ops
+git pull
+bash scripts/install.sh
 ```
+
+The script builds the binary in place (Go via Linuxbrew), installs the
+binary and unit file, renders `/etc/sirens-discord-ops.env` from SSM, and
+restarts the unit. Idempotent: re-run after every pull that touches the
+bot, the unit file, or the SSM-backed env.
 
 ## Adding a new game
 
-Edit `games.go`, append a `Game{}` entry, redeploy. The bot will post a new
+Edit `internal/bot/games.go`, append a `Game{}` entry, redeploy. The bot will post a new
 pinned panel for the new game on next start. Channels and admin role stay
 the same. Per-game verb lists keep new games from being locked into eco's
 exact four-verb mold.

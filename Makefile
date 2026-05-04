@@ -1,4 +1,4 @@
-.PHONY: build vet test tidy run install
+.PHONY: build vet test tidy run
 
 BIN := bin/sirens-discord-ops
 
@@ -17,12 +17,7 @@ tidy:
 
 # Local dev run against Sirens Echo. Export DISCORD_TOKEN, ADMIN_CHANNEL_ID,
 # AUDIT_CHANNEL_ID, ADMIN_ROLE_ID first (or wrap in a direnv .envrc).
+# Production deploy is `git push` here, then `git pull && bash scripts/install.sh`
+# on kai-server.
 run:
 	go run ./cmd/sirens-discord-ops
-
-# Cross-compile for kai-server (linux/amd64) and stage to /usr/local/bin.
-# Run from a workstation; assumes ssh access. Adjust SSH target as needed.
-install: build
-	GOOS=linux GOARCH=amd64 go build -o $(BIN) ./cmd/sirens-discord-ops
-	scp $(BIN) kai-server:/tmp/sirens-discord-ops
-	ssh kai-server 'sudo install -m 0755 /tmp/sirens-discord-ops /usr/local/bin/sirens-discord-ops && sudo systemctl restart sirens-discord-ops'
