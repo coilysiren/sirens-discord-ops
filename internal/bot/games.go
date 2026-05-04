@@ -1,4 +1,4 @@
-package main
+package bot
 
 // Game declares one game's coily passthrough surface. The bot pins one
 // message per Game in the admin-control channel, with one button per verb.
@@ -16,7 +16,7 @@ type Game struct {
 }
 
 // games is the v1 registry. Edit here to add a new game.
-var games = []Game{
+var Games = []Game{
 	{
 		Name:        "eco",
 		CoilyPrefix: []string{"gaming", "eco"},

@@ -1,4 +1,4 @@
-package main
+package bot
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ type Config struct {
 	CoilyBin         string // path to the coily binary; defaults to "coily"
 }
 
-func loadConfig() (Config, error) {
+func LoadConfig() (Config, error) {
 	c := Config{
 		Token:          os.Getenv("DISCORD_TOKEN"),
 		AdminChannelID: os.Getenv("ADMIN_CHANNEL_ID"),
