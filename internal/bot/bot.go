@@ -84,7 +84,7 @@ func (b *Bot) ensureControlPanel() error {
 				Channel:    b.cfg.AdminChannelID,
 				ID:         id,
 				Content:    ptr(panelContent(g)),
-				Components: &[]discordgo.MessageComponent{panelRow(g)},
+				Components: ptr(panelRows(g)),
 			})
 			if err != nil {
 				log.Printf("edit panel %s: %v", g.Name, err)
@@ -93,7 +93,7 @@ func (b *Bot) ensureControlPanel() error {
 		}
 		m, err := b.session.ChannelMessageSendComplex(b.cfg.AdminChannelID, &discordgo.MessageSend{
 			Content:    panelContent(g),
-			Components: []discordgo.MessageComponent{panelRow(g)},
+			Components: panelRows(g),
 		})
 		if err != nil {
 			log.Printf("send panel %s: %v", g.Name, err)
@@ -110,16 +110,21 @@ func panelContent(g Game) string {
 	return fmt.Sprintf("sirens-discord-ops:%s\n**%s** controls", g.Name, g.Name)
 }
 
-func panelRow(g Game) discordgo.ActionsRow {
-	row := discordgo.ActionsRow{}
+// One button per row to avoid fat-finger mistakes on mobile.
+func panelRows(g Game) []discordgo.MessageComponent {
+	rows := make([]discordgo.MessageComponent, 0, len(g.Verbs))
 	for _, v := range g.Verbs {
-		row.Components = append(row.Components, discordgo.Button{
-			Label:    fmt.Sprintf("%s %s", g.Name, v),
-			Style:    buttonStyle(v),
-			CustomID: fmt.Sprintf("%s:%s:%s", customIDPrefix, g.Name, v),
+		rows = append(rows, discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				discordgo.Button{
+					Label:    fmt.Sprintf("%s %s", g.Name, v),
+					Style:    buttonStyle(v),
+					CustomID: fmt.Sprintf("%s:%s:%s", customIDPrefix, g.Name, v),
+				},
+			},
 		})
 	}
-	return row
+	return rows
 }
 
 func buttonStyle(verb string) discordgo.ButtonStyle {
