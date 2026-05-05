@@ -57,34 +57,43 @@ func (b *Bot) onReady(s *discordgo.Session, _ *discordgo.Ready) {
 }
 
 // ensureControlPanel posts one pinned message per game in the admin-control
-// channel if one isn't already there. Detection is by content prefix
-// "sirens-discord-ops:<game>" in the message content, which the bot owns.
+// channel if one isn't already there. Panels use Components V2 so we can put
+// large Separator gaps between buttons; detection walks components for our
+// TextDisplay marker. Legacy V1 panels (marker in m.Content) are deleted and
+// recreated as V2.
 func (b *Bot) ensureControlPanel() error {
 	msgs, err := b.session.ChannelMessages(b.cfg.AdminChannelID, 100, "", "", "")
 	if err != nil {
 		return fmt.Errorf("ChannelMessages: %w", err)
 	}
-	have := map[string]string{} // game name -> message id
+	have := map[string]string{} // game name -> V2 message id
+	var legacy []string         // V1 message ids to delete
 	for _, m := range msgs {
 		if m.Author == nil || m.Author.ID != b.session.State.User.ID {
 			continue
 		}
-		for _, g := range b.games {
-			marker := "sirens-discord-ops:" + g.Name
-			if strings.HasPrefix(m.Content, marker) {
-				have[g.Name] = m.ID
-			}
+		game := detectPanelGame(m, b.games)
+		if game == "" {
+			continue
+		}
+		if m.Flags&discordgo.MessageFlagsIsComponentsV2 != 0 {
+			have[game] = m.ID
+		} else {
+			legacy = append(legacy, m.ID)
+		}
+	}
+	for _, id := range legacy {
+		if err := b.session.ChannelMessageDelete(b.cfg.AdminChannelID, id); err != nil {
+			log.Printf("delete legacy panel %s: %v", id, err)
 		}
 	}
 	for _, g := range b.games {
 		if id, ok := have[g.Name]; ok {
-			// Edit in place so verb-list changes propagate without a
-			// fresh post.
 			_, err := b.session.ChannelMessageEditComplex(&discordgo.MessageEdit{
 				Channel:    b.cfg.AdminChannelID,
 				ID:         id,
-				Content:    ptr(panelContent(g)),
-				Components: ptr(panelRows(g)),
+				Components: ptr(panelComponents(g)),
+				Flags:      discordgo.MessageFlagsIsComponentsV2,
 			})
 			if err != nil {
 				log.Printf("edit panel %s: %v", g.Name, err)
@@ -92,8 +101,8 @@ func (b *Bot) ensureControlPanel() error {
 			continue
 		}
 		m, err := b.session.ChannelMessageSendComplex(b.cfg.AdminChannelID, &discordgo.MessageSend{
-			Content:    panelContent(g),
-			Components: panelRows(g),
+			Components: panelComponents(g),
+			Flags:      discordgo.MessageFlagsIsComponentsV2,
 		})
 		if err != nil {
 			log.Printf("send panel %s: %v", g.Name, err)
@@ -106,15 +115,49 @@ func (b *Bot) ensureControlPanel() error {
 	return nil
 }
 
-func panelContent(g Game) string {
-	return fmt.Sprintf("sirens-discord-ops:%s\n**%s** controls", g.Name, g.Name)
+func panelMarker(name string) string {
+	return "sirens-discord-ops:" + name
 }
 
-// One button per row to avoid fat-finger mistakes on mobile.
-func panelRows(g Game) []discordgo.MessageComponent {
-	rows := make([]discordgo.MessageComponent, 0, len(g.Verbs))
-	for _, v := range g.Verbs {
-		rows = append(rows, discordgo.ActionsRow{
+// detectPanelGame returns the game name a panel message belongs to, or "".
+// Recognizes both V2 panels (marker in a TextDisplay component) and legacy V1
+// panels (marker as a content prefix).
+func detectPanelGame(m *discordgo.Message, games []Game) string {
+	for _, g := range games {
+		marker := panelMarker(g.Name)
+		if strings.HasPrefix(m.Content, marker) {
+			return g.Name
+		}
+		for _, c := range m.Components {
+			if td, ok := c.(*discordgo.TextDisplay); ok && strings.HasPrefix(td.Content, marker) {
+				return g.Name
+			}
+			if td, ok := c.(discordgo.TextDisplay); ok && strings.HasPrefix(td.Content, marker) {
+				return g.Name
+			}
+		}
+	}
+	return ""
+}
+
+// panelComponents builds the V2 component tree: a TextDisplay header carrying
+// the marker, followed by one ActionsRow per verb with a large Separator
+// between rows so buttons aren't packed tightly on mobile.
+func panelComponents(g Game) []discordgo.MessageComponent {
+	out := make([]discordgo.MessageComponent, 0, 1+2*len(g.Verbs))
+	out = append(out, discordgo.TextDisplay{
+		Content: fmt.Sprintf("%s\n**%s** controls", panelMarker(g.Name), g.Name),
+	})
+	large := discordgo.SeparatorSpacingSizeLarge
+	noDivider := false
+	for i, v := range g.Verbs {
+		if i > 0 {
+			out = append(out, discordgo.Separator{
+				Spacing: &large,
+				Divider: &noDivider,
+			})
+		}
+		out = append(out, discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
 				discordgo.Button{
 					Label:    fmt.Sprintf("%s %s", g.Name, v),
@@ -124,7 +167,7 @@ func panelRows(g Game) []discordgo.MessageComponent {
 			},
 		})
 	}
-	return rows
+	return out
 }
 
 func buttonStyle(verb string) discordgo.ButtonStyle {
