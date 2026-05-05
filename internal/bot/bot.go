@@ -186,11 +186,15 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 		return
 	}
 	cid := i.MessageComponentData().CustomID
-	parts := strings.SplitN(cid, ":", 3)
-	if len(parts) != 3 || parts[0] != customIDPrefix {
+	parts := strings.SplitN(cid, ":", 4)
+	if len(parts) < 3 || parts[0] != customIDPrefix {
 		return
 	}
 	gameName, verb := parts[1], parts[2]
+	action := ""
+	if len(parts) == 4 {
+		action = parts[3]
+	}
 	game, ok := b.findGame(gameName)
 	if !ok {
 		b.respondEphemeral(i, "unknown game: "+gameName)
@@ -204,6 +208,21 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 		b.respondEphemeral(i, "not authorized")
 		return
 	}
+	switch action {
+	case "":
+		if game.needsConfirm(verb) {
+			b.promptConfirm(i, game, verb)
+			return
+		}
+	case "go":
+		// Confirmed - fall through to run.
+	case "no":
+		b.updateEphemeral(i, fmt.Sprintf("cancelled `coily %s %s`", strings.Join(game.CoilyPrefix, " "), verb))
+		return
+	default:
+		b.respondEphemeral(i, "unknown action: "+action)
+		return
+	}
 	// Defer the response so we can take longer than 3 seconds to run
 	// coily. The follow-up message is ephemeral to the actor.
 	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -214,6 +233,57 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 		return
 	}
 	go b.runVerb(i, game, verb)
+}
+
+// promptConfirm sends an ephemeral confirmation prompt with Confirm / Cancel
+// buttons. The Confirm button's customID carries the original game and verb
+// plus the "go" action; Cancel carries "no".
+func (b *Bot) promptConfirm(i *discordgo.InteractionCreate, game Game, verb string) {
+	cmd := "coily " + strings.Join(append(append([]string{}, game.CoilyPrefix...), verb), " ")
+	confirmID := fmt.Sprintf("%s:%s:%s:go", customIDPrefix, game.Name, verb)
+	cancelID := fmt.Sprintf("%s:%s:%s:no", customIDPrefix, game.Name, verb)
+	err := b.session.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: fmt.Sprintf("Run `%s`?", cmd),
+			Flags:   discordgo.MessageFlagsEphemeral,
+			Components: []discordgo.MessageComponent{
+				discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						discordgo.Button{
+							Label:    "Confirm",
+							Style:    buttonStyle(verb),
+							CustomID: confirmID,
+						},
+						discordgo.Button{
+							Label:    "Cancel",
+							Style:    discordgo.SecondaryButton,
+							CustomID: cancelID,
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		log.Printf("prompt confirm: %v", err)
+	}
+}
+
+// updateEphemeral edits the ephemeral message that hosts the component the
+// user just clicked, clearing its buttons.
+func (b *Bot) updateEphemeral(i *discordgo.InteractionCreate, msg string) {
+	err := b.session.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseUpdateMessage,
+		Data: &discordgo.InteractionResponseData{
+			Content:    msg,
+			Components: []discordgo.MessageComponent{},
+			Flags:      discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("update ephemeral: %v", err)
+	}
 }
 
 func (b *Bot) runVerb(i *discordgo.InteractionCreate, game Game, verb string) {

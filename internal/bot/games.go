@@ -13,13 +13,28 @@ type Game struct {
 	CoilyPrefix []string
 	// Verbs are the buttons rendered on the pinned message, in order.
 	Verbs []string
+	// ConfirmVerbs are the verbs that require a second click to confirm
+	// before they execute. The first click shows an ephemeral prompt with
+	// Confirm / Cancel buttons; only Confirm runs the verb.
+	ConfirmVerbs []string
+}
+
+// needsConfirm reports whether the given verb requires a confirmation step.
+func (g Game) needsConfirm(verb string) bool {
+	for _, v := range g.ConfirmVerbs {
+		if v == verb {
+			return true
+		}
+	}
+	return false
 }
 
 // games is the v1 registry. Edit here to add a new game.
 var Games = []Game{
 	{
-		Name:        "eco",
-		CoilyPrefix: []string{"gaming", "eco"},
-		Verbs:       []string{"restart", "status", "stop", "start"},
+		Name:         "eco",
+		CoilyPrefix:  []string{"gaming", "eco"},
+		Verbs:        []string{"restart", "status", "stop", "start"},
+		ConfirmVerbs: []string{"restart", "status", "stop", "start"},
 	},
 }
