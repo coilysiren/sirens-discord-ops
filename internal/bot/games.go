@@ -35,6 +35,6 @@ var Games = []Game{
 		Name:         "eco",
 		CoilyPrefix:  []string{"gaming", "eco"},
 		Verbs:        []string{"restart", "status", "stop", "start"},
-		ConfirmVerbs: []string{"restart", "status", "stop", "start"},
+		ConfirmVerbs: []string{"restart", "stop", "start"},
 	},
 }
