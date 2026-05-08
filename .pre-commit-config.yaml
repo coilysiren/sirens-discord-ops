@@ -32,6 +32,7 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit, pre-push]
+  
   # BEGIN managed by coilyco-ai/scripts/apply-commit-msg-hook.py
   - repo: local
     hooks:
