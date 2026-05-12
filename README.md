@@ -112,3 +112,11 @@ install/uninstall, save backup/restore, log tailing, in-game player count,
 version pinning, whitelist edits. Anything beyond eco. Concurrency
 protection. Tighter coily integration (in-process call instead of
 `exec.Command`). Web UI, mobile, REST API, observability dashboards.
+
+## See also
+
+- [AGENTS.md](AGENTS.md) - agent-facing operating rules.
+- [docs/FEATURES.md](docs/FEATURES.md) - inventory of what ships today.
+- [.coily/coily.yaml](.coily/coily.yaml) - allowlisted commands. Agents route through coily, not bare `make` / `uv` / `python` / `npm` / `cargo` / `dotnet`.
+
+Cross-reference convention from [coilysiren/coilyco-ai#313](https://github.com/coilysiren/coilyco-ai/issues/313).

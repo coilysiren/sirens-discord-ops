@@ -98,3 +98,11 @@ The repo is intentionally a thin Discord-button passthrough to the `coily` CLI, 
 - One goroutine per verb invocation, `coily` runs in the background.
 - No in-process concurrency protection. The `coily` layer is the safety net for simultaneous admin button presses.
 - No persistent state across restarts. Panel detection works by scanning Discord messages, no database.
+
+## See also
+
+- [README.md](../README.md) - human-facing intro.
+- [AGENTS.md](../AGENTS.md) - agent-facing operating rules.
+- [.coily/coily.yaml](../.coily/coily.yaml) - allowlisted commands.
+
+Cross-reference convention from [coilysiren/coilyco-ai#313](https://github.com/coilysiren/coilyco-ai/issues/313).
