@@ -22,3 +22,16 @@ commands:
   run:
     run: make run
     description: Local dev run against Sirens Echo. Requires DISCORD_TOKEN + channel/role env vars.
+
+# Catalog metadata for the cross-repo knowledge graph.
+# Schema: coilysiren/coilyco-ai#420 (tracker).
+catalog:
+  kind: Component
+  type: tool
+  system: ops
+  owner: kai
+  lifecycle: production
+  description: "Go ops tooling for the Sirens Eco community Discord: message dumps, normalization, and analysis pipelines."
+  dependsOn:
+    - coilysiren/infrastructure
+  providesApis: []
