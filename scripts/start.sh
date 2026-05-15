@@ -8,7 +8,6 @@
 # To update the bot in production:
 #     workstation: git push
 #     kai-server:  sudo systemctl restart sirens-discord-ops
-# (or let the .timer below pick it up automatically.)
 
 set -euo pipefail
 
@@ -20,11 +19,12 @@ fi
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${REPO_DIR}"
 
-# Fast-forward to whatever's on origin/main. Avoids merge prompts in
+# Fast-forward main to origin/main. ff-only avoids merge prompts in
 # non-interactive systemd context. Local edits on kai-server should be
 # rare; if any exist, fail loudly rather than clobber.
 git fetch --quiet origin main
-git -c advice.detachedHead=false checkout --quiet origin/main
+git checkout --quiet main
+git merge --ff-only --quiet origin/main
 
 # Build in place. `go build` is incremental, so this is a no-op when the
 # source hasn't changed.

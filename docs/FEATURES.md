@@ -59,24 +59,17 @@ The repo is intentionally a thin Discord-button passthrough to the `coily` CLI, 
 - Restart-on-failure with 5-second backoff, 5-burst-per-60-seconds limit.
 - `network-online.target` dependency.
 
-## Auto-Update
-
-- Timer unit `sirens-discord-ops-update.timer` polls every 5 minutes.
-- Lightweight `git fetch` plus revision comparison, no unnecessary restarts.
-- Restarts the main service when `origin/main` advances.
-- 2-minute initial delay to avoid early-boot churn.
-- 30-second accuracy window on timer precision.
-- SSM parameters re-fetched on every start, supporting credential rotation without re-running `install.sh`.
-
 ## Deployment
 
-- `start.sh` handles fast-forward checkout via detached `git checkout origin/main` (no merge prompts).
+- Manual: after `git push`, run `sudo systemctl restart sirens-discord-ops` on kai-server.
+- `start.sh` fast-forwards `main` to `origin/main` via `git merge --ff-only` (no merge prompts, no detached HEAD).
 - Incremental `go build` (no-op when source unchanged).
+- SSM parameters re-fetched on every start, supporting credential rotation without re-running `install.sh`.
 - One-time bootstrap script `install.sh` places systemd units and sudoers config.
 
 ## Sudoers
 
-- NOPASSWD rules for auto-update timer and `coily` diagnostic commands.
+- NOPASSWD rules for manual restart and `coily` diagnostic commands.
 - Explicit command-line argument matching for systemctl invocations.
 - Covers both `/bin/systemctl` and `/usr/bin/systemctl` paths.
 

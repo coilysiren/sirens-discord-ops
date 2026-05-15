@@ -71,17 +71,14 @@ That script fetches origin/main, rebuilds the binary in place, fetches
 the four SSM-backed env vars at exec time, and execs into the binary. No
 `/etc/sirens-discord-ops.env`, no `/usr/local/bin/sirens-discord-ops`.
 
-A companion `sirens-discord-ops-update.timer` polls origin/main every
-five minutes and restarts the unit only when the remote has moved. So
-the update story is:
+Deploys are manual. After `git push`, restart the unit on kai-server:
 
 ```sh
-# Workstation
-git push
-# Within ~5min, kai-server's timer fires, restart cycles, bot is on new code.
+ssh kai@kai-server sudo systemctl restart sirens-discord-ops
 ```
 
-For the impatient: `ssh kai-server sudo systemctl restart sirens-discord-ops`.
+The next `ExecStart` of `start.sh` fetches origin/main, fast-forwards
+the local `main` branch, rebuilds, and execs the new binary.
 
 ### One-time bootstrap
 
@@ -94,9 +91,9 @@ bash scripts/install.sh
 ```
 
 `install.sh` drops the unit files and sudoers fragment into place,
-daemon-reloads, and enables both the service and the auto-update timer.
-Re-run it only when the unit files or sudoers in this repo change. Code
-changes flow through the timer, not through install.
+daemon-reloads, and enables the service. Re-run it only when the unit
+file or sudoers in this repo change. Code changes flow through manual
+restart, not through install.
 
 ## Adding a new game
 

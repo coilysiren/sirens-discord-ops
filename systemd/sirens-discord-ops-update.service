@@ -1,9 +1,0 @@
-[Unit]
-Description=sirens-discord-ops auto-update (poll origin/main, restart on change)
-
-[Service]
-Type=oneshot
-User=kai
-Group=kai
-WorkingDirectory=/home/kai/projects/coilysiren/sirens-discord-ops
-ExecStart=bash -c /home/kai/projects/coilysiren/sirens-discord-ops/scripts/auto-update.sh

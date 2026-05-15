@@ -1,8 +1,8 @@
 # /etc/sudoers.d/kai-sirens-discord-ops
 #
 # NOPASSWD entries so:
-#   - the auto-update timer (running as kai) can restart the bot when
-#     origin/main has moved.
+#   - `coily ssh systemctl restart sirens-discord-ops` (the manual deploy
+#     step after `git push`) works without a sudo password prompt.
 #   - `coily ssh systemctl status sirens-discord-ops` works for diagnostic
 #     access without a sudo password prompt.
 #
