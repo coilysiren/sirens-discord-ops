@@ -31,22 +31,7 @@ underlying behavior is the safety net. Documented as known-acceptable.
 
 ## Configuration
 
-All four required values live in SSM under `/sirens-discord-ops/` and are
-loaded into the systemd unit via `EnvironmentFile=/etc/sirens-discord-ops.env`:
-
-| Env var            | SSM path                                  |
-|--------------------|-------------------------------------------|
-| `DISCORD_TOKEN`    | `/sirens-discord-ops/discord_token`       |
-| `ADMIN_CHANNEL_ID` | `/sirens-discord-ops/admin_channel_id`    |
-| `AUDIT_CHANNEL_ID` | `/sirens-discord-ops/audit_channel_id`    |
-| `ADMIN_ROLE_ID`    | `/sirens-discord-ops/admin_role_id`       |
-
-Optional:
-
-- `COILY_BIN` - path to the coily binary. Defaults to `coily` (PATH lookup).
-
-The `scripts/install.sh` script writes `/etc/sirens-discord-ops.env` from
-SSM as part of the deploy. See "Production deploy" below.
+Required env vars live in SSM under `/sirens-discord-ops/`: `DISCORD_TOKEN`, `ADMIN_CHANNEL_ID`, `AUDIT_CHANNEL_ID`, `ADMIN_ROLE_ID`. Optional `COILY_BIN` overrides the coily binary path (defaults to PATH lookup). `scripts/start.sh` fetches them at exec time.
 
 ## Local development
 
@@ -62,38 +47,9 @@ in place, so the verb list stays current without duplicate panels.
 
 ## Production deploy
 
-Native systemd unit on kai-server (not k3s). The bot shells out to `coily`
-directly, so it runs as the same user `scripts/install-coily.sh` (in
-coilysiren/infrastructure) configured: `kai`.
+Native systemd unit on kai-server (not k3s), runs as `kai`. `ExecStart` points at `scripts/start.sh`: fetch origin/main, fast-forward, rebuild in place, pull SSM env at exec time, exec the binary. Deploys are manual: after `git push`, `ssh kai@kai-server sudo systemctl restart sirens-discord-ops`.
 
-The unit's `ExecStart` points directly at `scripts/start.sh` in this repo.
-That script fetches origin/main, rebuilds the binary in place, fetches
-the four SSM-backed env vars at exec time, and execs into the binary. No
-`/etc/sirens-discord-ops.env`, no `/usr/local/bin/sirens-discord-ops`.
-
-Deploys are manual. After `git push`, restart the unit on kai-server:
-
-```sh
-ssh kai@kai-server sudo systemctl restart sirens-discord-ops
-```
-
-The next `ExecStart` of `start.sh` fetches origin/main, fast-forwards
-the local `main` branch, rebuilds, and execs the new binary.
-
-### One-time bootstrap
-
-```sh
-# kai-server
-cd /home/kai/projects/coilysiren
-git clone git@github.com:coilysiren/sirens-discord-ops.git
-cd sirens-discord-ops
-bash scripts/install.sh
-```
-
-`install.sh` drops the unit files and sudoers fragment into place,
-daemon-reloads, and enables the service. Re-run it only when the unit
-file or sudoers in this repo change. Code changes flow through manual
-restart, not through install.
+One-time bootstrap on kai-server: clone, then `bash scripts/install.sh`. The script drops unit + sudoers, daemon-reloads, enables the service. Re-run only when unit/sudoers change. Code flows through manual restart, not install.
 
 ## Adding a new game
 
