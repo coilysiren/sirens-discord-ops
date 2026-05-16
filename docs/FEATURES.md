@@ -62,4 +62,4 @@ Baseline of `sirens-discord-ops`. Thin Discord-button passthrough to `coily` wit
 - [AGENTS.md](../AGENTS.md) - agent-facing operating rules.
 - [.coily/coily.yaml](../.coily/coily.yaml) - allowlisted commands.
 
-Cross-reference convention from [coilysiren/agentic-os-kai#313](https://github.com/coilysiren/agentic-os-kai/issues/313).
+Cross-reference convention from [coilysiren/agentic-os#59](https://github.com/coilysiren/agentic-os/issues/59).

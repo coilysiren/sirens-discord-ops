@@ -6,6 +6,6 @@ Workspace-level conventions (git workflow, voice, ops boundary) load globally vi
 
 - [README.md](README.md) - human-facing intro.
 - [docs/FEATURES.md](docs/FEATURES.md) - inventory of what ships today.
-- [.coily/coily.yaml](.coily/coily.yaml) - allowlisted commands. Agents route through coily, not bare `make` / `uv` / `python` / `npm` / `cargo` / `dotnet`.
+- [.coily/coily.yaml](.coily/coily.yaml) - allowlisted commands.
 
-Cross-reference convention from [coilysiren/agentic-os-kai#313](https://github.com/coilysiren/agentic-os-kai/issues/313).
+Cross-reference convention from [coilysiren/agentic-os#59](https://github.com/coilysiren/agentic-os/issues/59).
