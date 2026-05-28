@@ -33,5 +33,4 @@ catalog:
   lifecycle: production
   description: "Go ops tooling for the Sirens Eco community Discord: message dumps, normalization, and analysis pipelines."
   dependsOn:
-    - coilysiren/infrastructure
-  providesApis: []
+    - forgejo.coilysiren.me/coilysiren/infrastructure
