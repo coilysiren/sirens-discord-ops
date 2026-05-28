@@ -1,17 +1,6 @@
 #!/usr/bin/bash
-# install.sh - one-time bootstrap of sirens-discord-ops on kai-server.
-#
-# Drops the unit files and sudoers fragment into place, then enables the
-# main service. Ongoing updates are manual:
-#
-#   workstation: git push
-#   kai-server:  sudo systemctl restart sirens-discord-ops
-#
-# Re-running this script is safe (idempotent) but only needed when the
-# unit files or sudoers fragment in this repo change. Code-only updates
-# do not require re-running install.
-#
-# Run as the `kai` user from the repo checkout. Sudo is invoked per-step.
+# install.sh - one-time idempotent bootstrap of sirens-discord-ops on kai-server.
+# Run as `kai` from the checkout. See README "Production deploy" for the workflow.
 
 set -euo pipefail
 

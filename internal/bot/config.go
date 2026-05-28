@@ -6,8 +6,7 @@ import (
 )
 
 // Config is the runtime configuration loaded from environment variables.
-// The systemd unit populates these from SSM via a small wrapper script;
-// running locally against Sirens Echo means exporting them in your shell.
+// Prod fills these from SSM in start.sh. Run locally by exporting them.
 type Config struct {
 	Token            string
 	AdminChannelID   string

@@ -1,13 +1,6 @@
 #!/usr/bin/bash
-# start.sh - ExecStart for sirens-discord-ops.service.
-#
-# Pulls the latest main, rebuilds the binary, fetches SSM-backed env vars,
-# and execs into the binary as PID 1. Run by systemd; not intended to be
-# run by hand.
-#
-# To update the bot in production:
-#     workstation: git push
-#     kai-server:  sudo systemctl restart sirens-discord-ops
+# start.sh - ExecStart for sirens-discord-ops.service. Run by systemd, not by hand.
+# Pulls main, rebuilds, fetches SSM env, execs the binary. See README deploy notes.
 
 set -euo pipefail
 
@@ -19,9 +12,8 @@ fi
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${REPO_DIR}"
 
-# Fast-forward main to origin/main. ff-only avoids merge prompts in
-# non-interactive systemd context. Local edits on kai-server should be
-# rare; if any exist, fail loudly rather than clobber.
+# Fast-forward main to origin/main. ff-only fails loudly rather than
+# clobber any rare local edits in the non-interactive systemd context.
 git fetch --quiet origin main
 git checkout --quiet main
 git merge --ff-only --quiet origin/main

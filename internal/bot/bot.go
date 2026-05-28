@@ -10,12 +10,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// customIDPrefix tags interactions belonging to this bot. Format:
-//
-//	sdo:<game>:<verb>
-//
-// Discord button custom IDs are limited to 100 chars; verb and game names
-// here stay well under that.
+// customIDPrefix tags this bot's interactions. Format sdo:<game>:<verb>.
 const customIDPrefix = "sdo"
 
 // Bot wires the Discord session, configuration, and game registry.
@@ -30,9 +25,7 @@ func NewBot(cfg Config, gs []Game) (*Bot, error) {
 	if err != nil {
 		return nil, fmt.Errorf("discordgo.New: %w", err)
 	}
-	// We need the GuildMembers intent to read role membership of the
-	// interaction actor reliably. Interactions ship Member with roles
-	// already, so this is belt-and-suspenders for edge cases.
+	// Interactions already ship Member roles. These intents cover edge cases.
 	s.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMessages
 	b := &Bot{cfg: cfg, session: s, games: gs}
 	s.AddHandler(b.onReady)
@@ -56,11 +49,8 @@ func (b *Bot) onReady(s *discordgo.Session, _ *discordgo.Ready) {
 	}
 }
 
-// ensureControlPanel posts one pinned message per game in the admin-control
-// channel if one isn't already there. Panels use Components V2 so we can put
-// large Separator gaps between buttons; detection walks components for our
-// TextDisplay marker. Legacy V1 panels (marker in m.Content) are deleted and
-// recreated as V2.
+// ensureControlPanel posts one pinned V2 panel per game in the admin channel.
+// Missing panels are created, legacy V1 panels deleted and recreated as V2.
 func (b *Bot) ensureControlPanel() error {
 	msgs, err := b.session.ChannelMessages(b.cfg.AdminChannelID, 100, "", "", "")
 	if err != nil {
@@ -119,9 +109,8 @@ func panelMarker(name string) string {
 	return "sirens-discord-ops:" + name
 }
 
-// detectPanelGame returns the game name a panel message belongs to, or "".
-// Recognizes both V2 panels (marker in a TextDisplay component) and legacy V1
-// panels (marker as a content prefix).
+// detectPanelGame returns the game a panel message belongs to, or "".
+// Matches V2 TextDisplay markers and legacy V1 content-prefix markers.
 func detectPanelGame(m *discordgo.Message, games []Game) string {
 	for _, g := range games {
 		marker := panelMarker(g.Name)
@@ -140,9 +129,8 @@ func detectPanelGame(m *discordgo.Message, games []Game) string {
 	return ""
 }
 
-// panelComponents builds the V2 component tree: a TextDisplay header carrying
-// the marker, followed by one ActionsRow per verb with a large Separator
-// between rows so buttons aren't packed tightly on mobile.
+// panelComponents builds the V2 tree: a marker TextDisplay header then one
+// ActionsRow per verb, separated by large gaps for mobile spacing.
 func panelComponents(g Game) []discordgo.MessageComponent {
 	out := make([]discordgo.MessageComponent, 0, 1+2*len(g.Verbs))
 	out = append(out, discordgo.TextDisplay{
@@ -223,8 +211,7 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 		b.respondEphemeral(i, "unknown action: "+action)
 		return
 	}
-	// Defer the response so we can take longer than 3 seconds to run
-	// coily. The follow-up message is ephemeral to the actor.
+	// Defer so coily can run past Discord's 3s window. Follow-up is ephemeral.
 	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{Flags: discordgo.MessageFlagsEphemeral},
@@ -235,9 +222,8 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 	go b.runVerb(i, game, verb)
 }
 
-// promptConfirm sends an ephemeral confirmation prompt with Confirm / Cancel
-// buttons. The Confirm button's customID carries the original game and verb
-// plus the "go" action; Cancel carries "no".
+// promptConfirm sends an ephemeral Confirm / Cancel prompt. Confirm's customID
+// carries the game, verb, and "go" action. Cancel carries "no".
 func (b *Bot) promptConfirm(i *discordgo.InteractionCreate, game Game, verb string) {
 	cmd := "coily " + strings.Join(append(append([]string{}, game.CoilyPrefix...), verb), " ")
 	confirmID := fmt.Sprintf("%s:%s:%s:go", customIDPrefix, game.Name, verb)
@@ -294,9 +280,7 @@ func (b *Bot) runVerb(i *discordgo.InteractionCreate, game Game, verb string) {
 	if _, err := b.session.ChannelMessageSend(b.cfg.AuditChannelID, startMsg); err != nil {
 		log.Printf("audit start: %v", err)
 	}
-	// Coily verbs are typically fast, but `restart` waits on systemctl. A
-	// 5-minute ceiling is generous and prevents a stuck invocation from
-	// pinning the bot.
+	// 5-minute ceiling so a slow verb (restart waits on systemctl) can't hang.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	res, err := runCoily(ctx, b.cfg.CoilyBin, args)
@@ -314,11 +298,7 @@ func (b *Bot) runVerb(i *discordgo.InteractionCreate, game Game, verb string) {
 }
 
 // buildDoneMessage formats the audit-channel completion message.
-//
-// Discord caps message content at 2000 chars. The fenced code block plus
-// header eats some of that, so we truncate coily output to fit and append
-// a "(truncated)" marker. The full output is in journalctl on kai-server
-// for forensics.
+// Output is tail-truncated to fit Discord's 2000-char content cap.
 func buildDoneMessage(cmd string, res CoilyResult, err error) string {
 	header := fmt.Sprintf("`%s` complete (exit %d)", cmd, res.ExitCode)
 	if err != nil {

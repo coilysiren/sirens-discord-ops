@@ -1,21 +1,17 @@
 package bot
 
-// Game declares one game's coily passthrough surface. The bot pins one
-// message per Game in the admin-control channel, with one button per verb.
-//
-// v1 registers a single Game (eco). Adding factorio later is a config edit.
+// Game declares one game's coily passthrough surface. The bot pins one panel
+// per Game in the admin channel, one button per verb. v1 ships eco only.
 type Game struct {
 	// Name appears in audit-channel prefixes and button labels (e.g. "eco").
 	Name string
-	// CoilyPrefix is prepended to the verb when invoking coily. For eco
-	// this is {"gaming", "eco"}, so a Restart button runs
-	// `coily gaming eco restart`.
+	// CoilyPrefix is prepended to the verb. For eco it is {"gaming","eco"},
+	// so a Restart button runs `coily gaming eco restart`.
 	CoilyPrefix []string
 	// Verbs are the buttons rendered on the pinned message, in order.
 	Verbs []string
-	// ConfirmVerbs are the verbs that require a second click to confirm
-	// before they execute. The first click shows an ephemeral prompt with
-	// Confirm / Cancel buttons; only Confirm runs the verb.
+	// ConfirmVerbs require a second click to run. The first click shows an
+	// ephemeral Confirm / Cancel prompt. Only Confirm runs the verb.
 	ConfirmVerbs []string
 }
 

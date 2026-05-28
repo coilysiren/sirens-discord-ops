@@ -13,9 +13,8 @@ type CoilyResult struct {
 	Output   string // combined stdout+stderr
 }
 
-// runCoily invokes `<coilyBin> <args...>`, captures combined output, and
-// returns the exit code. Non-zero exit is not an error - it is a result.
-// Only failures to start the process produce an error return.
+// runCoily runs `<coilyBin> <args...>` and captures combined output.
+// Non-zero exit is a result, not an error. Only start failures return an error.
 func runCoily(ctx context.Context, coilyBin string, args []string) (CoilyResult, error) {
 	cmd := exec.CommandContext(ctx, coilyBin, args...)
 	var buf bytes.Buffer
