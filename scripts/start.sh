@@ -24,10 +24,10 @@ mkdir -p bin
 go build -o bin/sirens-discord-ops ./cmd/sirens-discord-ops
 
 # Fetch SSM at exec time. No env file on disk: token rotation is
-# `coily aws ssm put-parameter` followed by `systemctl restart`.
-export DISCORD_TOKEN="$(coily aws ssm get-parameter --name /sirens-discord-ops/discord_token    --with-decryption --query Parameter.Value --output text)"
-export ADMIN_CHANNEL_ID="$(coily aws ssm get-parameter --name /sirens-discord-ops/admin_channel_id --with-decryption --query Parameter.Value --output text)"
-export AUDIT_CHANNEL_ID="$(coily aws ssm get-parameter --name /sirens-discord-ops/audit_channel_id --with-decryption --query Parameter.Value --output text)"
-export ADMIN_ROLE_ID="$(coily aws ssm get-parameter --name /sirens-discord-ops/admin_role_id     --with-decryption --query Parameter.Value --output text)"
+# `coily ops aws ssm put-parameter` followed by `systemctl restart`.
+export DISCORD_TOKEN="$(coily ops aws ssm get-parameter --name /sirens-discord-ops/discord_token    --with-decryption --query Parameter.Value --output text)"
+export ADMIN_CHANNEL_ID="$(coily ops aws ssm get-parameter --name /sirens-discord-ops/admin_channel_id --with-decryption --query Parameter.Value --output text)"
+export AUDIT_CHANNEL_ID="$(coily ops aws ssm get-parameter --name /sirens-discord-ops/audit_channel_id --with-decryption --query Parameter.Value --output text)"
+export ADMIN_ROLE_ID="$(coily ops aws ssm get-parameter --name /sirens-discord-ops/admin_role_id     --with-decryption --query Parameter.Value --output text)"
 
 exec "${REPO_DIR}/bin/sirens-discord-ops"
