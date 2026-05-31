@@ -1,4 +1,4 @@
-module github.com/coilysiren/sirens-discord-ops
+module github.com/coilyco-bridge/sirens-discord-ops
 
 go 1.25.0
 

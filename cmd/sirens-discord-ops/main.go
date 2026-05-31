@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/coilysiren/sirens-discord-ops/internal/bot"
+	"github.com/coilyco-bridge/sirens-discord-ops/internal/bot"
 )
 
 func main() {
