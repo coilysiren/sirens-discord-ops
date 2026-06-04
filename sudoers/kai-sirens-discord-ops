@@ -1,10 +1,12 @@
 # /etc/sudoers.d/kai-sirens-discord-ops
 #
 # NOPASSWD entries so:
-#   - `coily ssh systemctl restart sirens-discord-ops` (the manual deploy
-#     step after `git push`) works without a sudo password prompt.
-#   - `coily ssh systemctl status sirens-discord-ops` works for diagnostic
-#     access without a sudo password prompt.
+#   - `systemctl restart sirens-discord-ops` works without a sudo password
+#     prompt - both the manual deploy step after `git push` and the
+#     auto-updater (scripts/auto-update.sh, run by the -update.timer) rely on
+#     this passwordless restart.
+#   - `systemctl status sirens-discord-ops` works for diagnostic access
+#     without a sudo password prompt.
 #
 # Sudoers strict-matches command-line args, so we list each form coily
 # emits explicitly. coily `status` appends --no-pager; `restart` does not.

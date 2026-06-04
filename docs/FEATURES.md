@@ -40,12 +40,15 @@ Baseline of `sirens-discord-ops`. Thin Discord-button passthrough to `coily` wit
 ## Systemd
 
 - `sirens-discord-ops.service` runs as `kai`. Graceful SIGTERM shutdown with context cancellation. Restart-on-failure: 5s backoff, 5-burst-per-60s limit. `network-online.target` dep.
+- `sirens-discord-ops-update.timer` + `-update.service` run `scripts/auto-update.sh` every 5 minutes (oneshot) - the auto-updater.
 
 ## Deployment
 
-- Manual: after `git push`, `sudo systemctl restart sirens-discord-ops` on kai-server.
-- `start.sh` fast-forwards `main` to `origin/main` via `git merge --ff-only`, runs an incremental `go build`, refetches SSM at every start (credential rotation without re-running install), execs the binary.
-- One-time `install.sh` places systemd units + sudoers config.
+- Continuous: `sirens-discord-ops-update.timer` fires `scripts/auto-update.sh` every 5 minutes. It polls `origin/main` and restarts the main service only when the checkout is behind, so `git push` deploys on its own.
+- Immediate: `sudo systemctl restart sirens-discord-ops` on kai-server skips the timer wait.
+- `start.sh` fast-forwards `main` to `origin/main` via `git merge --ff-only`, runs an incremental `go build`, refetches SSM at every start (credential rotation without re-running install), execs the binary. The SSM fetch is fail-loud: an empty/failed credential pull aborts the start rather than booting with an empty token.
+- One-time `install.sh` places systemd units (main + updater) + sudoers config.
+- See [deploy.md](deploy.md) for the unit layout, the auto-updater, and the fail-loud SSM fetch.
 
 ## Sudoers
 

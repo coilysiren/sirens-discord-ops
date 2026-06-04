@@ -25,9 +25,26 @@ go build -o bin/sirens-discord-ops ./cmd/sirens-discord-ops
 
 # Fetch SSM at exec time. No env file on disk: token rotation is
 # `coily ops aws ssm put-parameter` followed by `systemctl restart`.
-export DISCORD_TOKEN="$(coily ops aws ssm get-parameter --name /sirens-discord-ops/discord_token    --with-decryption --query Parameter.Value --output text)"
-export ADMIN_CHANNEL_ID="$(coily ops aws ssm get-parameter --name /sirens-discord-ops/admin_channel_id --with-decryption --query Parameter.Value --output text)"
-export AUDIT_CHANNEL_ID="$(coily ops aws ssm get-parameter --name /sirens-discord-ops/audit_channel_id --with-decryption --query Parameter.Value --output text)"
-export ADMIN_ROLE_ID="$(coily ops aws ssm get-parameter --name /sirens-discord-ops/admin_role_id     --with-decryption --query Parameter.Value --output text)"
+
+# fetch_ssm fails loud so a broken fetch dies here, not later as a confusing
+# "invalid Authorization header". See docs/deploy.md for the two-guard rationale.
+fetch_ssm() {
+  local key="$1"
+  # Split assignment from `local` so a non-zero fetch trips set -e (a combined
+  # `local value=...` would mask it); the -z check catches an empty success.
+  local value
+  value="$(coily ops aws ssm get-parameter --name "/sirens-discord-ops/${key}" --with-decryption --query Parameter.Value --output text)"
+  if [ -z "${value}" ]; then
+    echo "FATAL: SSM fetch for /sirens-discord-ops/${key} returned empty" >&2
+    exit 1
+  fi
+  printf '%s' "${value}"
+}
+
+DISCORD_TOKEN="$(fetch_ssm discord_token)"
+ADMIN_CHANNEL_ID="$(fetch_ssm admin_channel_id)"
+AUDIT_CHANNEL_ID="$(fetch_ssm audit_channel_id)"
+ADMIN_ROLE_ID="$(fetch_ssm admin_role_id)"
+export DISCORD_TOKEN ADMIN_CHANNEL_ID AUDIT_CHANNEL_ID ADMIN_ROLE_ID
 
 exec "${REPO_DIR}/bin/sirens-discord-ops"

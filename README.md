@@ -47,9 +47,13 @@ in place, so the verb list stays current without duplicate panels.
 
 ## Production deploy
 
-Native systemd unit on kai-server (not k3s), runs as `kai`. `ExecStart` points at `scripts/start.sh`: fetch origin/main, fast-forward, rebuild in place, pull SSM env at exec time, exec the binary. Deploys are manual: after `git push`, `ssh kai@kai-server sudo systemctl restart sirens-discord-ops`.
+Native systemd unit on kai-server (not k3s), runs as `kai`. `ExecStart` points at `scripts/start.sh`: fetch origin/main, fast-forward, rebuild in place, pull SSM env at exec time, exec the binary. The SSM fetch fails loud - an empty or failed credential pull aborts start.sh at the source rather than booting the bot with an empty token.
 
-One-time bootstrap on kai-server: clone, then `bash scripts/install.sh`. The script drops unit + sudoers, daemon-reloads, enables the service. Re-run only when unit/sudoers change. Code flows through manual restart, not install.
+## Continuous deploy
+
+A companion timer makes deploys automatic: `git push` is enough. `sirens-discord-ops-update.timer` fires `scripts/auto-update.sh` every 5 minutes; the script polls `origin/main` and, when the checkout is behind, runs `sudo systemctl restart sirens-discord-ops` so start.sh fast-forwards, rebuilds, and re-execs. For an immediate deploy, skip the wait: `ssh kai@kai-server sudo systemctl restart sirens-discord-ops`.
+
+One-time bootstrap on kai-server: clone, then `bash scripts/install.sh`. The script drops units (main service + updater service/timer) + sudoers, daemon-reloads, enables the service and the timer. Re-run only when units/sudoers change.
 
 ## Adding a new game
 
